@@ -178,33 +178,77 @@
     <a href="/admin" class="admin-link">Yönetici Paneli</a>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadGallery('All'); // Sayfa açılınca tüm resimleri sunucudan iste
+       document.addEventListener('DOMContentLoaded', () => {
+    // Sayfa açılınca tüm resimleri sunucudan iste
+    loadGallery('All'); 
 
-            // Kategori butonlarına tıklama dinleyicisi ekle
-            const buttons = document.querySelectorAll('.category-btn');
-            buttons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    // Aktif buton görselini güncelle
-                    buttons.forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
+    // Kategori butonlarını yakala
+    const buttons = document.querySelectorAll('.category-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (!e.target) return;
+            
+            // Aktif buton görselini güncelle
+            buttons.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
 
-                    // Seçilen kategoriyi al ve filtrele
-                    const selectedCategory = e.target.textContent.trim();
-                    loadGallery(selectedCategory);
-                });
+            // Seçilen kategoriyi al ve filtrele
+            const selectedCategory = e.target.textContent ? e.target.textContent.trim() : 'All';
+            loadGallery(selectedCategory);
+        });
+    });
+});
+
+async function loadGallery(filter = 'All') {
+    const container = document.getElementById('wallpaper-container');
+    if (!container) return;
+    container.innerHTML = '<p class="no-data">Loading wallpapers...</p>';
+
+    try {
+        // Sunucudan (server.js API'sinden) güncel yüklenen resimleri çek
+        const res = await fetch('/api/wallpapers');
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+
+        container.innerHTML = '';
+
+        // İngilizce/Türkçe kategori eşleştirme güvencesi
+        const filtered = filter === 'All' 
+            ? data 
+            : data.filter(wp => {
+                if (!wp || !wp.category) return false;
+                const cat = wp.category.toLowerCase();
+                const filt = filter.toLowerCase();
+                
+                // Admin panelinde Türkçe seçilirse tam eşleşme sağlama güvencesi
+                if ((filt === 'cars' && cat === 'araba') || 
+                    (filt === 'space' && cat === 'uzay') || 
+                    (filt === 'nature' && cat === 'doğa') || 
+                    (filt === 'gaming' && cat === 'oyun')) {
+                    return true;
+                }
+                return cat === filt;
             });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<p class="no-data">No wallpapers found in "${filter}" category.</p>`;
+            return;
+        }
+
+        // Resimleri teker teker grid içine bas
+        filtered.forEach(wp => {
+            if (!wp) return;
+            container.innerHTML += `
+                <div class="wallpaper-card">
+                    <img src="${wp.url}" alt="${wp.name || 'Wallpaper'}">
+                    <div class="wallpaper-info">
+                        <h3>${wp.name || 'Untitled'}</h3>
+                    </div>
+                </div>`;
         });
 
-        async function loadGallery(filter = 'All') {
-            const container = document.getElementById('wallpaper-container');
-            if (!container) return;
-            container.innerHTML = '<p class="no-data">Loading wallpapers...</p>';
-
-            try {
-                // Sunucudan (server.js API'sinden) güncel yüklenen resimleri çek
-                const res = await fetch('/api/wallpapers');
-                if (!res.ok) throw new Error('Network response was not ok');
-                const data = await res.json();
-
-                container
+    } catch (error) {
+        console.error("Error loading wallpapers:", error);
+        container.innerHTML = '<p class="no-data" style="color: #ef4444;">Could not load wallpapers from server.</p>';
+    }
+}
