@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaWalls - Your Ultimate Wallpaper Destination</title>
+    <style>
+        /* Tasarım ve Arka Plan Ayarları */
+        body {
+            background-color: #0b0b0f;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Üst Başlık ve Logo Alanı */
+        header {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(90deg, #a855f7, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #6b7280;
+            margin: 5px 0 0 0;
+            font-size: 14px;
+        }
+
+        /* Kategori Butonları */
+        .categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-btn {
+            background-color: #16161a;
+            color: #9ca3af;
+            border: 1px solid #27272a;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .category-btn:hover {
+            color: #ffffff;
+            border-color: #4b5563;
+        }
+
+        .category-btn.active {
+            background: linear-gradient(90deg, #a855f7, #3b82f6);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+
+        /* Duvar Kağıtları Izgarası (Grid) */
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            width: 90%;
+            max-width: 1200px;
+            padding-bottom: 60px;
+        }
+
+        .wallpaper-card {
+            background-color: #121214;
+            border: 1px solid #1f1f23;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .wallpaper-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(168, 85, 247, 0.2);
+        }
+
+        .wallpaper-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .wallpaper-info {
+            padding: 15px;
+            background: #16161a;
+        }
+
+        .wallpaper-info h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e5e7eb;
+        }
+
+        /* Yönetici Paneli Linki */
+        .admin-link {
+            margin-top: auto;
+            margin-bottom: 20px;
+            color: #4b5563;
+            text-decoration: none;
+            font-size: 12px;
+            transition: color 0.3s ease;
+        }
+
+        .admin-link:hover {
+            color: #a855f7;
+        }
+
+        .no-data {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #6b7280;
+            font-size: 16px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <img src="logo.png" alt="NovaWalls Logo" class="logo-img" onerror="this.style.display='none'">
+            <h1>NovaWalls</h1>
+        </div>
+        <p>Your ultimate wallpaper destination!</p>
+    </header>
+
+    <div class="categories">
+        <button class="category-btn active">All</button>
+        <button class="category-btn">Cars</button>
+        <button class="category-btn">Space</button>
+        <button class="category-btn">Neon</button>
+        <button class="category-btn">Nature</button>
+        <button class="category-btn">Gaming</button>
+    </div>
+
+    <div class="wallpaper-grid" id="wallpaper-container">
+        </div>
+
+    <a href="/admin" class="admin-link">Yönetici Paneli</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGallery('All'); // Sayfa açılınca tüm resimleri sunucudan iste
+
+            // Kategori butonlarına tıklama dinleyicisi ekle
+            const buttons = document.querySelectorAll('.category-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Aktif buton görselini güncelle
+                    buttons.forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    // Seçilen kategoriyi al ve filtrele
+                    const selectedCategory = e.target.textContent.trim();
+                    loadGallery(selectedCategory);
+                });
+            });
+        });
+
+        async function loadGallery(filter = 'All') {
+            const container = document.getElementById('wallpaper-container');
+            if (!container) return;
+            container.innerHTML = '<p class="no-data">Loading wallpapers...</p>';
+
+            try {
+                // Sunucudan (server.js API'sinden) güncel yüklenen resimleri çek
+                const res = await fetch('/api/wallpapers');
+                if (!res.ok) throw new Error('Network response was not ok');
+                const data = await res.json();
+
+                container
